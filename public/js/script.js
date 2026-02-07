@@ -41,7 +41,8 @@ if (!mapContainer) {
         attribution: "© OpenStreetMap contributors"
     }).addTo(map);
 
-    const markers = {};
+const markers = {};
+let isFirstLocation = true;
 
     socket.on("receive-location", (data) => {
         const { id, latitude, longitude } = data;
@@ -54,6 +55,7 @@ if (!mapContainer) {
 
         if (id === socket.id) {
             map.setView([latitude, longitude], 16);
+            isFirstLocation = false;
         }
     });
 
