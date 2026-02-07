@@ -23,7 +23,8 @@ io.on("connection", (socket) => {
     });
 
     socket.on("disconnect", () => {
-        console.log("User-disconnected:", socket.id);
+        console.log("user-disconnected:", socket.id);
+        io.emit("user-disconnected", socket.id);
     });
 });
 
@@ -31,6 +32,12 @@ app.get("/", (req, res) => {
     res.render("index");
 });
 
+app.get((req, res) => {
+    res.redirect("/");
+});
+
 server.listen(PORT, () => {
     console.log("Server started on PORT", PORT);
 });
+
+
