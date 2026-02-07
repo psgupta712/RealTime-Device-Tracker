@@ -53,7 +53,7 @@ let isFirstLocation = true;
             markers[id] = L.marker([latitude, longitude]).addTo(map);
         }
 
-        if (id === socket.id) {
+        if (id === socket.id && isFirstLocation) {
             map.setView([latitude, longitude], 16);
             isFirstLocation = false;
         }
