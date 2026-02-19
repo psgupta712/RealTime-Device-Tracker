@@ -6,11 +6,73 @@
     <title>Real-Time Tracking App</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
 </head>
 <body>
+    <!-- Username Setup Modal -->
+    <div id="usernameModal" class="modal">
+        <div class="modal-content">
+            <h2>Welcome to Real-Time Tracker</h2>
+            <p>Set your username and marker color</p>
+            <form id="usernameForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter your name" maxlength="20" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="roomId">Room Code</label>
+                    <input type="text" id="roomId" placeholder="Enter or create room code" maxlength="50" value="<%= roomId || '' %>" required>
+                    <small class="input-hint">Share this code with friends to track together</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Choose Your Color</label>
+                    <div class="color-options">
+                        <div class="color-option" data-color="#FF5733" style="background-color: #FF5733;"></div>
+                        <div class="color-option" data-color="#33FF57" style="background-color: #33FF57;"></div>
+                        <div class="color-option" data-color="#3357FF" style="background-color: #3357FF;"></div>
+                        <div class="color-option" data-color="#FF33F5" style="background-color: #FF33F5;"></div>
+                        <div class="color-option" data-color="#FFD700" style="background-color: #FFD700;"></div>
+                        <div class="color-option selected" data-color="#FF1493" style="background-color: #FF1493;"></div>
+                        <div class="color-option" data-color="#00CED1" style="background-color: #00CED1;"></div>
+                        <div class="color-option" data-color="#FF8C00" style="background-color: #FF8C00;"></div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">Join Room</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Room Info Bar -->
+    <div id="roomInfoBar" class="room-info-bar" style="display: none;">
+        <div class="room-info-content">
+            <span class="room-label">Room:</span>
+            <span id="currentRoomId" class="room-id"></span>
+            <button id="copyRoomBtn" class="btn-copy" title="Copy room link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- User List Sidebar -->
+    <div id="userListSidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h3>Active Users</h3>
+            <span id="userCount" class="user-count">0</span>
+        </div>
+        <div id="userList" class="user-list"></div>
+    </div>
+
+    <!-- Map Container -->
     <div id="map"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
     <script src="https://cdn.socket.io/4.8.3/socket.io.min.js" integrity="sha384-kzavj5fiMwLKzzD1f8S7TeoVIEi7uKHvbTA3ueZkrzYq75pNQUiUi6Dy98Q3fxb0" crossorigin="anonymous"></script>
 
