@@ -15,7 +15,7 @@ html, body {
     height: 100%;
 }
 
-/* Modal Styles */
+/* Modal */
 .modal {
     display: flex;
     position: fixed;
@@ -122,7 +122,7 @@ html, body {
     font-weight: bold;
 }
 
-/* Submit Button */
+/* Buttons */
 .btn-submit {
     width: 100%;
     padding: 12px;
@@ -139,10 +139,6 @@ html, body {
 
 .btn-submit:hover {
     background: #357abd;
-}
-
-.btn-submit:active {
-    background: #2868a8;
 }
 
 /* Room Info Bar */
@@ -192,7 +188,114 @@ html, body {
     color: #4a90e2;
 }
 
-/* Sidebar Styles */
+/* Control Panel */
+.control-panel {
+    position: fixed;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 8px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    z-index: 500;
+    display: flex;
+    gap: 8px;
+}
+
+.control-panel button {
+    background: white;
+    border: 1px solid #e5e5e5;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.control-panel button:hover {
+    background: #f5f5f5;
+    transform: scale(1.05);
+}
+
+/* Activity Panel */
+.activity-panel {
+    position: fixed;
+    top: 70px;
+    left: 15px;
+    width: 300px;
+    max-height: 400px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    z-index: 500;
+    overflow: hidden;
+}
+
+.activity-header {
+    padding: 15px;
+    background: #f7f7f7;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.activity-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.btn-close {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+
+.activity-feed {
+    max-height: 350px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.activity-item {
+    padding: 10px;
+    margin-bottom: 8px;
+    background: #f9f9f9;
+    border-radius: 4px;
+    display: flex;
+    gap: 10px;
+}
+
+.activity-icon {
+    font-size: 16px;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-message {
+    font-size: 13px;
+    color: #1a1a1a;
+}
+
+.activity-time {
+    font-size: 11px;
+    color: #999;
+    margin-top: 2px;
+}
+
+.activity-empty {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+    font-size: 14px;
+}
+
+/* Sidebar */
 .sidebar {
     position: fixed;
     top: 15px;
@@ -261,10 +364,9 @@ html, body {
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    margin-right: 10px;
+    flex-shrink: 0;
     border: 2px solid white;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-    flex-shrink: 0;
 }
 
 .user-info {
@@ -286,11 +388,21 @@ html, body {
     margin-top: 1px;
 }
 
-.user-distance {
+.user-distance,
+.user-eta,
+.meeting-dist,
+.battery-status,
+.user-status {
     font-size: 11px;
-    color: #666;
     margin-top: 2px;
-    font-weight: 400;
+}
+
+.user-distance {
+    color: #666;
+}
+
+.user-eta {
+    color: #f39c12;
 }
 
 .btn-route {
@@ -310,11 +422,79 @@ html, body {
     background: #357abd;
 }
 
-.btn-route:active {
-    background: #2868a8;
+/* Meeting Point */
+.meeting-point-marker {
+    background: transparent;
+    border: none;
 }
 
-/* Custom Leaflet Marker */
+.meeting-point-icon {
+    position: relative;
+}
+
+.meeting-point-pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 68, 68, 0.4);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+/* Status Dropdown */
+.status-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 5px;
+    background: white;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    min-width: 180px;
+    z-index: 1000;
+}
+
+.status-option {
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.15s;
+}
+
+.status-option:hover {
+    background: #f5f5f5;
+}
+
+.status-icon {
+    font-size: 16px;
+}
+
+.status-text {
+    font-size: 14px;
+}
+
+.status-clear {
+    border-top: 1px solid #e5e5e5;
+    color: #e74c3c;
+}
+
+/* Markers */
 .custom-marker-icon {
     background: transparent;
     border: none;
@@ -324,30 +504,63 @@ html, body {
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
-/* Hide routing instructions panel */
 .leaflet-routing-container {
     display: none !important;
 }
 
-/* Scrollbar Styles */
-.user-list::-webkit-scrollbar {
+/* Night Mode */
+body.night-mode {
+    background: #1a1a1a;
+}
+
+body.night-mode .modal-content,
+body.night-mode .sidebar,
+body.night-mode .room-info-bar,
+body.night-mode .control-panel,
+body.night-mode .activity-panel {
+    background: #2d2d2d;
+    color: #e0e0e0;
+    border-color: #444;
+}
+
+body.night-mode .sidebar-header,
+body.night-mode .activity-header {
+    background: #3a3a3a;
+    border-color: #444;
+}
+
+body.night-mode .user-item {
+    background: #3a3a3a;
+}
+
+body.night-mode .user-item:hover {
+    background: #444;
+}
+
+body.night-mode input {
+    background: #3a3a3a;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+/* Scrollbar */
+.user-list::-webkit-scrollbar,
+.activity-feed::-webkit-scrollbar {
     width: 5px;
 }
 
-.user-list::-webkit-scrollbar-track {
+.user-list::-webkit-scrollbar-track,
+.activity-feed::-webkit-scrollbar-track {
     background: #f5f5f5;
 }
 
-.user-list::-webkit-scrollbar-thumb {
+.user-list::-webkit-scrollbar-thumb,
+.activity-feed::-webkit-scrollbar-thumb {
     background: #ccc;
     border-radius: 3px;
 }
 
-.user-list::-webkit-scrollbar-thumb:hover {
-    background: #999;
-}
-
-/* Responsive Design */
+/* Responsive */
 @media (max-width: 768px) {
     .sidebar {
         width: 220px;
@@ -355,12 +568,13 @@ html, body {
         right: 10px;
     }
 
-    .modal-content {
-        padding: 25px 20px;
+    .activity-panel {
+        width: 260px;
     }
 
-    .color-options {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
+    .control-panel {
+        left: 10px;
+        right: 10px;
+        transform: none;
     }
 }

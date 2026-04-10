@@ -1,72 +1,39 @@
 const socket = io();
 
 let lastEmitTime = 0;
-const EMIT_INTERVAL = 2000; // 2 seconds
+const EMIT_INTERVAL = 2000;
 let currentUser = null;
 let currentRoomId = null;
 let locationWatchId = null;
 let isUserRegistered = false;
-let myLocation = null; // Store current user's location
+let myLocation = null;
+let map = null;
 
-// Calculate distance between two points using Haversine formula
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Earth's radius in kilometers
-    
-    // Convert degrees to radians
-    const toRad = (degree) => degree * Math.PI / 180;
-    
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    
-    const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-    
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    
-    const distance = R * c; // Distance in km
-    
-    return distance;
-}
-
-// Format distance for display
-function formatDistance(km) {
-    if (km < 1) {
-        // Less than 1 km, show in meters
-        return Math.round(km * 1000) + ' m';
-    } else if (km < 10) {
-        // Less than 10 km, show 1 decimal
-        return km.toFixed(1) + ' km';
-    } else {
-        // 10 km or more, show whole number
-        return Math.round(km) + ' km';
-    }
-}
-
-// Socket connection handler
+// Socket connection
 socket.on('connect', () => {
-    console.log('Connected to server with socket ID:', socket.id);
+    console.log('Connected:', socket.id);
 });
 
 socket.on('room-joined', (data) => {
-    console.log('Room joined successfully:', data);
+    console.log('Room joined:', data);
     currentRoomId = data.roomId;
     
-    // Show room info bar
     document.getElementById('roomInfoBar').style.display = 'block';
+    document.getElementById('controlPanel').style.display = 'flex';
     document.getElementById('currentRoomId').textContent = data.roomId;
+    
+    addActivityItem(`Joined room: ${data.roomId}`, 'success');
+    initBatteryMonitoring();
 });
 
-// Wait for DOM to be fully loaded
+// Wait for DOM
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
 });
 
 function initializeApp() {
-    // Color selection handling
     const colorOptions = document.querySelectorAll('.color-option');
-    let selectedColor = '#FF1493'; // Default color
+    let selectedColor = '#FF1493';
 
     colorOptions.forEach(option => {
         option.addEventListener('click', () => {
@@ -76,69 +43,43 @@ function initializeApp() {
         });
     });
 
-    // Username form submission
     document.getElementById('usernameForm').addEventListener('submit', (e) => {
         e.preventDefault();
         const username = document.getElementById('username').value.trim();
         const roomId = document.getElementById('roomId').value.trim();
         
         if (username && roomId) {
-            currentUser = {
-                username: username,
-                color: selectedColor,
-                roomId: roomId
-            };
-            
-            // Hide modal
+            currentUser = { username, color: selectedColor, roomId };
             document.getElementById('usernameModal').style.display = 'none';
             
-            // Join room
-            socket.emit('join-room', {
-                roomId: roomId,
-                username: username,
-                color: selectedColor
-            });
-            
+            socket.emit('join-room', { roomId, username, color: selectedColor });
             isUserRegistered = true;
-            
-            console.log('Joining room:', currentUser);
-            
-            // Start location tracking
             startLocationTracking();
         }
     });
     
-    // Copy room link button
     document.getElementById('copyRoomBtn').addEventListener('click', () => {
         const roomLink = `${window.location.origin}/room/${currentRoomId}`;
-        
         navigator.clipboard.writeText(roomLink).then(() => {
             const btn = document.getElementById('copyRoomBtn');
             const originalHTML = btn.innerHTML;
             btn.innerHTML = '✓';
             btn.style.color = '#4a90e2';
-            
             setTimeout(() => {
                 btn.innerHTML = originalHTML;
                 btn.style.color = '';
             }, 2000);
-        }).catch(err => {
-            console.error('Failed to copy:', err);
-            alert('Room link: ' + roomLink);
         });
     });
 }
 
-// Start tracking user location
 function startLocationTracking() {
     if (navigator.geolocation) {
         locationWatchId = navigator.geolocation.watchPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
-                const now = Date.now();
-
-                // Store my current location
                 myLocation = { latitude, longitude };
+                const now = Date.now();
 
                 if (now - lastEmitTime >= EMIT_INTERVAL) {
                     socket.emit("send-location", { latitude, longitude });
@@ -147,94 +88,116 @@ function startLocationTracking() {
             },
             (error) => {
                 console.error("Geolocation error:", error);
-                alert("Unable to access your location. Please enable location services.");
+                alert("Unable to access location. Please enable location services.");
             },
-            {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0
-            }
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
         );
-    } else {
-        alert("Geolocation not supported by your browser");
     }
 }
 
 // Initialize map
 const mapContainer = document.getElementById("map");
-if (!mapContainer) {
-    console.error("Map container not found");
-} else {
-    const map = L.map("map").setView([0, 0], 16);
-
-    setTimeout(() => {
-        map.invalidateSize();
-    }, 200);
+if (mapContainer) {
+    map = L.map("map").setView([0, 0], 16);
+    setTimeout(() => map.invalidateSize(), 200);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap contributors"
+        attribution: "© OpenStreetMap"
     }).addTo(map);
 
     const markers = {};
-    const userLocations = {}; // Store all user locations
+    const userLocations = {};
     let isFirstLocation = true;
-    let currentUsers = []; // Store current user list
-    let currentRoutingControl = null; // Store active route control
+    let currentUsers = [];
+    let currentRoutingControl = null;
 
-    // Function to refresh user list with updated distances
+    function createCustomIcon(color) {
+        const svgIcon = `
+            <svg width="30" height="42" viewBox="0 0 30 42" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 0C6.716 0 0 6.716 0 15c0 8.284 15 27 15 27s15-18.716 15-27C30 6.716 23.284 0 15 0z" 
+                      fill="${color}" stroke="white" stroke-width="2"/>
+                <circle cx="15" cy="15" r="5" fill="white"/>
+            </svg>
+        `;
+        return L.divIcon({
+            className: 'custom-marker-icon',
+            html: svgIcon,
+            iconSize: [30, 42],
+            iconAnchor: [15, 42],
+            popupAnchor: [0, -42]
+        });
+    }
+
     function refreshUserList() {
         const userList = document.getElementById('userList');
         if (!userList || currentUsers.length === 0) return;
         
         const html = currentUsers.map(user => {
             const isCurrentUser = user.id === socket.id;
-            
-            // Calculate distance if we have both locations
             let distanceText = '';
+            let etaText = '';
             let routeButton = '';
+            let statusDisplay = '';
+            let batteryDisplay = '';
+            let meetingDistText = '';
             
             if (!isCurrentUser && myLocation && userLocations[user.id]) {
                 const distance = calculateDistance(
-                    myLocation.latitude,
-                    myLocation.longitude,
-                    userLocations[user.id].latitude,
-                    userLocations[user.id].longitude
+                    myLocation.latitude, myLocation.longitude,
+                    userLocations[user.id].latitude, userLocations[user.id].longitude
                 );
                 distanceText = `<span class="user-distance">${formatDistance(distance)}</span>`;
-                routeButton = `<button class="btn-route" onclick="toggleRoute('${user.id}')">Show Route</button>`;
+                
+                const speed = getUserSpeed(user.id);
+                if (speed > 0) {
+                    const eta = calculateETA(distance, speed);
+                    etaText = `<span class="user-eta">→ ${eta}</span>`;
+                }
+                
+                routeButton = `<button class="btn-route" onclick="toggleRoute('${user.id}')">Route</button>`;
             }
             
+            if (meetingPoint && myLocation) {
+                const distToMeeting = getDistanceToMeetingPoint(myLocation.latitude, myLocation.longitude);
+                if (distToMeeting) {
+                    meetingDistText = `<span class="meeting-dist">📍 ${distToMeeting}</span>`;
+                }
+            }
+            
+            statusDisplay = getStatusDisplay(user.id);
+            batteryDisplay = getBatteryDisplay(user.id);
+            
             return `
-            <div class="user-item ${isCurrentUser ? 'current-user' : ''}">
-                <div class="user-color" style="background-color: ${user.color};"></div>
-                <div class="user-info">
-                    <span class="user-name">${user.username}</span>
-                    ${isCurrentUser ? '<span class="you-label">(You)</span>' : distanceText}
+                <div class="user-item ${isCurrentUser ? 'current-user' : ''}">
+                    <div class="user-color" style="background-color: ${user.color};"></div>
+                    <div class="user-info">
+                        <span class="user-name">${user.username}</span>
+                        ${isCurrentUser ? '<span class="you-label">(You)</span>' : ''}
+                        ${statusDisplay}
+                        ${distanceText} ${etaText}
+                        ${meetingDistText}
+                        ${batteryDisplay}
+                    </div>
+                    ${routeButton}
                 </div>
-                ${routeButton}
-            </div>
-        `;
+            `;
         }).join('');
         
         userList.innerHTML = html;
     }
-    
-    // Function to toggle route display
+
     window.toggleRoute = function(userId) {
-        // If there's an existing route, remove it
         if (currentRoutingControl) {
             map.removeControl(currentRoutingControl);
             currentRoutingControl = null;
             return;
         }
         
-        // Check if we have both locations
         if (!myLocation || !userLocations[userId]) {
-            alert('Location not available yet. Please wait a moment.');
+            alert('Location not available.');
             return;
         }
         
-        // Create routing control
         currentRoutingControl = L.Routing.control({
             waypoints: [
                 L.latLng(myLocation.latitude, myLocation.longitude),
@@ -248,64 +211,33 @@ if (!mapContainer) {
             lineOptions: {
                 styles: [{color: '#4a90e2', opacity: 0.8, weight: 5}]
             },
-            createMarker: function() { return null; }, // Don't create extra markers
+            createMarker: function() { return null; },
             router: L.Routing.osrmv1({
                 serviceUrl: 'https://router.project-osrm.org/route/v1'
             })
         }).addTo(map);
         
-        // Hide the instructions panel (we only want the route line)
         setTimeout(() => {
             const container = document.querySelector('.leaflet-routing-container');
-            if (container) {
-                container.style.display = 'none';
-            }
+            if (container) container.style.display = 'none';
         }, 100);
     };
 
-    // Custom icon function - using SVG for better reliability
-    function createCustomIcon(color) {
-        const svgIcon = `
-            <svg width="30" height="42" viewBox="0 0 30 42" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 0C6.716 0 0 6.716 0 15c0 8.284 15 27 15 27s15-18.716 15-27C30 6.716 23.284 0 15 0z" 
-                      fill="${color}" 
-                      stroke="white" 
-                      stroke-width="2"/>
-                <circle cx="15" cy="15" r="5" fill="white"/>
-            </svg>
-        `;
-        
-        return L.divIcon({
-            className: 'custom-marker-icon',
-            html: svgIcon,
-            iconSize: [30, 42],
-            iconAnchor: [15, 42],
-            popupAnchor: [0, -42]
-        });
-    }
-
-    // Receive location updates
     socket.on("receive-location", (data) => {
         const { id, latitude, longitude, username, color } = data;
-        
-        // Store this user's location
         userLocations[id] = { latitude, longitude };
         
-        console.log('Received location:', { id, username, color });
+        calculateSpeed(id, latitude, longitude);
+        updateConnectionStatus(id);
+        checkGeofences(id, latitude, longitude, username);
 
         if (markers[id]) {
-            // Update existing marker position
             markers[id].setLatLng([latitude, longitude]);
-            // Update marker color if it changed
-            const customIcon = createCustomIcon(color);
-            markers[id].setIcon(customIcon);
+            markers[id].setIcon(createCustomIcon(color));
         } else {
-            // Create new marker
-            const customIcon = createCustomIcon(color);
-            markers[id] = L.marker([latitude, longitude], { icon: customIcon })
+            markers[id] = L.marker([latitude, longitude], { icon: createCustomIcon(color) })
                 .bindPopup(`<strong>${username}</strong>`)
                 .addTo(map);
-            console.log('Created marker for:', username);
         }
 
         if (id === socket.id && isFirstLocation) {
@@ -313,40 +245,23 @@ if (!mapContainer) {
             isFirstLocation = false;
         }
         
-        // Refresh user list to update distances
         refreshUserList();
     });
 
-    // Handle user disconnection
     socket.on("user-disconnected", (id) => {
         if (markers[id]) {
             map.removeLayer(markers[id]);
             delete markers[id];
         }
+        delete userLocations[id];
+        cleanupUserData(id);
+        cleanupBatteryData(id);
+        clearUserFromGeofences(id);
     });
 
-    // Update user list sidebar
     socket.on("users-update", (users) => {
-        console.log('Users update received:', users);
-        
-        const userList = document.getElementById('userList');
-        const userCount = document.getElementById('userCount');
-        
-        if (!userList || !userCount) {
-            console.error('ERROR: User list elements not found!');
-            return;
-        }
-        
-        // Store users for distance updates
         currentUsers = users;
-        
-        userCount.textContent = users.length;
-        
-        // Refresh the list with distances
+        document.getElementById('userCount').textContent = users.length;
         refreshUserList();
-    });
-
-    socket.on("disconnect", () => {
-        console.warn("Socket disconnected");
     });
 }

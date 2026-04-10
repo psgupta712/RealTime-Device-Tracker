@@ -27,8 +27,9 @@ io.on("connection", (socket) => {
         // Join the socket.io room
         socket.join(roomId);
         
-        // Store room ID on socket for later reference
+        // Store room ID and username on socket
         socket.roomId = roomId;
+        socket.username = username;
         
         // Initialize room if it doesn't exist
         if (!rooms.has(roomId)) {
@@ -53,10 +54,17 @@ io.on("connection", (socket) => {
             color: color
         });
         
-        // Broadcast updated user list to everyone in the room
+        // Broadcast updated user list
         io.to(roomId).emit("users-update", Array.from(roomUsers.values()));
+        
+        // Notify room about new user
+        socket.to(roomId).emit("user-joined-room", {
+            userId: socket.id,
+            username: username
+        });
     });
 
+    // Handle location updates
     socket.on("send-location", (data) => {
         const roomId = socket.roomId;
         if (!roomId) return;
@@ -77,10 +85,84 @@ io.on("connection", (socket) => {
         }
     });
 
+    // Handle status updates
+    socket.on("set-status", (data) => {
+        const roomId = socket.roomId;
+        const username = socket.username;
+        if (!roomId) return;
+        
+        socket.to(roomId).emit("user-status-updated", {
+            userId: socket.id,
+            username: username,
+            ...data
+        });
+    });
+
+    socket.on("clear-status", () => {
+        const roomId = socket.roomId;
+        const username = socket.username;
+        if (!roomId) return;
+        
+        socket.to(roomId).emit("user-status-updated", {
+            userId: socket.id,
+            username: username,
+            statusId: null
+        });
+    });
+
+    // Handle meeting point
+    socket.on("set-meeting-point", (data) => {
+        const roomId = socket.roomId;
+        if (!roomId) return;
+        
+        socket.to(roomId).emit("meeting-point-set", data);
+    });
+
+    socket.on("remove-meeting-point", () => {
+        const roomId = socket.roomId;
+        if (!roomId) return;
+        
+        socket.to(roomId).emit("meeting-point-removed");
+    });
+
+    // Handle geofence
+    socket.on("create-geofence", (data) => {
+        const roomId = socket.roomId;
+        if (!roomId) return;
+        
+        socket.to(roomId).emit("geofence-created", data);
+    });
+
+    socket.on("remove-geofence", (geofenceId) => {
+        const roomId = socket.roomId;
+        if (!roomId) return;
+        
+        socket.to(roomId).emit("geofence-removed", geofenceId);
+    });
+
+    // Handle battery updates
+    socket.on("update-battery", (data) => {
+        const roomId = socket.roomId;
+        if (!roomId) return;
+        
+        socket.to(roomId).emit("user-battery-updated", {
+            userId: socket.id,
+            ...data
+        });
+    });
+
+    // Handle ping for connection status
+    socket.on("ping", () => {
+        socket.emit("pong");
+    });
+
+    // Handle disconnection
     socket.on("disconnect", () => {
         console.log("user-disconnected:", socket.id);
         
         const roomId = socket.roomId;
+        const username = socket.username;
+        
         if (roomId && rooms.has(roomId)) {
             const roomUsers = rooms.get(roomId);
             roomUsers.delete(socket.id);
@@ -88,7 +170,13 @@ io.on("connection", (socket) => {
             // Notify room about disconnection
             io.to(roomId).emit("user-disconnected", socket.id);
             
-            // Send updated user list to room
+            // Notify about user leaving
+            io.to(roomId).emit("user-left-room", {
+                userId: socket.id,
+                username: username
+            });
+            
+            // Send updated user list
             io.to(roomId).emit("users-update", Array.from(roomUsers.values()));
             
             // Clean up empty rooms
