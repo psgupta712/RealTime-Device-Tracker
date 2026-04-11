@@ -188,7 +188,7 @@ html, body {
     color: #4a90e2;
 }
 
-/* Control Panel */
+/* Control Panel - Desktop */
 .control-panel {
     position: fixed;
     top: 15px;
@@ -216,6 +216,71 @@ html, body {
 .control-panel button:hover {
     background: #f5f5f5;
     transform: scale(1.05);
+}
+
+/* Mobile Bottom Navigation */
+.mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e5e5e5;
+    padding: 10px;
+    z-index: 600;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-nav-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.mobile-nav button {
+    background: white;
+    border: 1px solid #e5e5e5;
+    padding: 12px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 20px;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.mobile-nav button span {
+    font-size: 10px;
+    color: #666;
+}
+
+.mobile-nav button:active {
+    background: #f0f0f0;
+    transform: scale(0.95);
+}
+
+/* Toggle Button for Users Sidebar */
+.toggle-users-btn {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    background: white;
+    border: 1px solid #e5e5e5;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    z-index: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    display: none;
+}
+
+.toggle-users-btn:active {
+    background: #f0f0f0;
 }
 
 /* Activity Panel */
@@ -300,13 +365,18 @@ html, body {
     position: fixed;
     top: 15px;
     right: 15px;
-    width: 260px;
+    width: 280px;
     background: white;
     border-radius: 6px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
     z-index: 500;
     overflow: hidden;
     border: 1px solid #e5e5e5;
+    transition: transform 0.3s ease;
+}
+
+.sidebar.hidden {
+    transform: translateX(calc(100% + 15px));
 }
 
 .sidebar-header {
@@ -517,7 +587,9 @@ body.night-mode .modal-content,
 body.night-mode .sidebar,
 body.night-mode .room-info-bar,
 body.night-mode .control-panel,
-body.night-mode .activity-panel {
+body.night-mode .activity-panel,
+body.night-mode .mobile-nav,
+body.night-mode .toggle-users-btn {
     background: #2d2d2d;
     color: #e0e0e0;
     border-color: #444;
@@ -560,21 +632,68 @@ body.night-mode input {
     border-radius: 3px;
 }
 
-/* Responsive */
+/* Mobile Responsive */
 @media (max-width: 768px) {
-    .sidebar {
-        width: 220px;
-        top: 10px;
-        right: 10px;
-    }
-
-    .activity-panel {
-        width: 260px;
-    }
-
+    /* Hide desktop control panel */
     .control-panel {
+        display: none;
+    }
+
+    /* Show mobile navigation */
+    .mobile-nav {
+        display: block;
+    }
+
+    /* Show toggle button for users */
+    .toggle-users-btn {
+        display: block;
+    }
+
+    /* Adjust sidebar for mobile */
+    .sidebar {
+        width: 85%;
+        max-width: 320px;
+        top: 0;
+        right: 0;
+        height: 100%;
+        border-radius: 0;
+    }
+
+    .sidebar-header {
+        padding: 20px 15px;
+    }
+
+    .user-list {
+        max-height: calc(100vh - 80px);
+        padding: 15px;
+    }
+
+    /* Room info bar smaller */
+    .room-info-bar {
+        top: 10px;
+        left: 10px;
+        padding: 8px 12px;
+        max-width: calc(100% - 100px);
+    }
+
+    .room-label {
+        font-size: 11px;
+    }
+
+    .room-id {
+        font-size: 12px;
+    }
+
+    /* Activity panel full width on mobile */
+    .activity-panel {
         left: 10px;
         right: 10px;
-        transform: none;
+        width: auto;
+        max-width: calc(100% - 20px);
+    }
+
+    /* Map padding for mobile nav */
+    #map {
+        height: calc(100% - 70px);
     }
 }

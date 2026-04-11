@@ -58,13 +58,35 @@
         </div>
     </div>
 
-    <!-- Control Panel -->
+    <!-- Toggle Users Button (Mobile) -->
+    <button id="toggleUsersBtn" class="toggle-users-btn" style="display: none;" onclick="toggleUsersSidebar()">
+        <span id="userCountMobile">0</span> 👥
+    </button>
+
+    <!-- Desktop Control Panel -->
     <div id="controlPanel" class="control-panel" style="display: none;">
-        <button id="nightModeBtn" onclick="toggleNightMode()" title="Toggle Night Mode">🌙</button>
         <button onclick="enableMeetingPointMode()" title="Set Meeting Point">📍</button>
         <button onclick="startDrawingGeofence()" title="Create Geofence">🔴</button>
         <button id="myStatusBtn" onclick="toggleStatusDropdown()" title="Set Status">💬</button>
         <button onclick="toggleActivityFeed()" title="Activity Feed">📜</button>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <div class="mobile-nav" style="display: none;">
+        <div class="mobile-nav-grid">
+            <button onclick="enableMeetingPointMode()">
+                📍
+                <span>Meeting</span>
+            </button>
+            <button onclick="startDrawingGeofence()">
+                🔴
+                <span>Geofence</span>
+            </button>
+            <button onclick="toggleStatusDropdown()">
+                💬
+                <span>Status</span>
+            </button>
+        </div>
     </div>
 
     <!-- Activity Feed Panel -->
@@ -100,7 +122,6 @@
     <script src="/js/meetingPoint.js"></script>
     <script src="/js/geofence.js"></script>
     <script src="/js/battery.js"></script>
-    <script src="/js/nightMode.js"></script>
     <script src="/js/script.js"></script>
 </body>
 </html>

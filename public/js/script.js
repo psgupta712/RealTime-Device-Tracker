@@ -265,3 +265,64 @@ if (mapContainer) {
         refreshUserList();
     });
 }
+
+// Toggle Users Sidebar (Mobile)
+function toggleUsersSidebar() {
+    const sidebar = document.getElementById('userListSidebar');
+    sidebar.classList.toggle('hidden');
+}
+
+// Auto-show controls based on screen size
+function updateMobileUI() {
+    const isMobile = window.innerWidth <= 768;
+    const controlPanel = document.getElementById('controlPanel');
+    const mobileNav = document.querySelector('.mobile-nav');
+    const toggleBtn = document.getElementById('toggleUsersBtn');
+    const sidebar = document.getElementById('userListSidebar');
+    
+    if (isMobile) {
+        controlPanel.style.display = 'none';
+        mobileNav.style.display = 'block';
+        toggleBtn.style.display = 'block';
+        // Hide sidebar by default on mobile
+        sidebar.classList.add('hidden');
+    } else {
+        controlPanel.style.display = 'flex';
+        mobileNav.style.display = 'none';
+        toggleBtn.style.display = 'none';
+        // Show sidebar on desktop
+        sidebar.classList.remove('hidden');
+    }
+}
+
+// Listen for window resize
+window.addEventListener('resize', updateMobileUI);
+
+// Initialize on load
+window.addEventListener('load', () => {
+    updateMobileUI();
+});
+
+// Update mobile user count when users update
+const originalUsersUpdate = socket._callbacks['$users-update'];
+socket.on('users-update', () => {
+    const userCountMobile = document.getElementById('userCountMobile');
+    const userCount = document.getElementById('userCount').textContent;
+    if (userCountMobile) {
+        userCountMobile.textContent = userCount;
+    }
+});
+
+// Close sidebar when clicking outside on mobile
+document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 768) {
+        const sidebar = document.getElementById('userListSidebar');
+        const toggleBtn = document.getElementById('toggleUsersBtn');
+        
+        if (!sidebar.contains(e.target) && 
+            !toggleBtn.contains(e.target) && 
+            !sidebar.classList.contains('hidden')) {
+            sidebar.classList.add('hidden');
+        }
+    }
+});
